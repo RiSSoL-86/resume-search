@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Подбор кандидатов</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #8b8b8b;
+    --rule: #e0e0e0;
+    --accent: #d6001c;
+    --hit: #f2f8f2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #ececec;
+    color: var(--ink);
+    font: 15px/1.5 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  a { color: inherit; }
+
+  .bar {
+    background: #fff;
+    border-bottom: 1px solid var(--rule);
+    padding: 16px 24px;
+  }
+  .summary { color: var(--muted); font-size: 13px; }
+  .summary b { color: var(--ink); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip {
+    background: #f3f3f3;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 12px;
+  }
+  /* Named by the recruiter, not read out of the vacancy by the model. */
+  .chip.must { background: #fff; border-color: var(--accent); color: var(--accent); }
+
+  .page {
+    max-width: 940px;
+    margin: 24px auto;
+    background: #fff;
+    padding: 40px 56px 48px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .12);
+  }
+  .rank {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
+  .rank .no {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  h1 { font-size: 30px; margin: 0 0 4px; }
+  h2 { font-size: 19px; margin: 0 0 2px; }
+  h3 { font-size: 16px; font-weight: 500; margin: 14px 0 8px; }
+  .section {
+    color: var(--muted);
+    font-size: 15px;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 4px;
+    margin: 34px 0 16px;
+  }
+  .meta { color: var(--muted); }
+
+  .job { display: flex; gap: 24px; margin-bottom: 26px; }
+  .job .when {
+    width: 130px;
+    flex: none;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .job .what { flex: 1; min-width: 0; }
+  .job.matched .what { border-left: 3px solid #74b374; padding-left: 14px; }
+  .desc { white-space: pre-wrap; margin-top: 8px; }
+  .industries { color: var(--muted); font-size: 13px; }
+
+  .row { display: flex; gap: 24px; margin-bottom: 14px; }
+  .row .label { width: 130px; flex: none; color: var(--muted); font-size: 13px; }
+  .row .value { flex: 1; }
+  .empty { max-width: 940px; margin: 60px auto; text-align: center; color: var(--muted); }
+  /* Its card was fetched at the old weights and no longer earns its place. */
+  .page.out { opacity: .5; }
+  .rank .fell { display: none; color: var(--accent); }
+  .page.out .rank .fell { display: inline; }
+
+  .tune { margin-top: 16px; border-top: 1px solid var(--rule); padding-top: 16px; }
+  .tune-title { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+  .tune .panel { max-width: 640px; }
+
+  .pool { max-width: 940px; margin: 24px auto; background: #fff; padding: 20px 24px 24px; box-shadow: 0 1px 4px rgba(0, 0, 0, .12); }
+  .pool h2 { font-size: 15px; margin: 0 0 2px; }
+  .pool .lead { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+  .pool .weights { border-bottom: 1px solid var(--rule); margin: 12px 0 12px; padding-bottom: 8px; }
+  .pool .weights .block { margin-bottom: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0 28px; }
+  .pool .weights .group-title { grid-column: 1 / -1; }
+  .pool table { width: 100%; border-collapse: collapse; }
+  .pool td { border-top: 1px solid var(--rule); padding: 10px 6px; vertical-align: top; }
+  .pool tr:first-child td { border-top: none; }
+  .pool .no { width: 28px; color: var(--muted); font-size: 13px; }
+  .pool .who { font-weight: 500; }
+  .pool .facts { color: var(--muted); font-size: 12px; }
+  .pool .num { width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* What lifted the candidate, drawn wide enough to actually read. */
+  .pool .track { margin-top: 8px; background: #f3f3f3; border-radius: 3px; }
+  .pool .parts { display: flex; gap: 2px; height: 22px; }
+  .pool .parts i {
+    font-style: normal;
+    font-size: 11px;
+    line-height: 22px;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    padding: 0 7px;
+    border-radius: 3px;
+    min-width: 3px;
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend b { width: 11px; height: 11px; border-radius: 2px; }
+
+{% include "resumes/_panel.css" %}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="summary">
+    подходит <b>{{ dashboard.total }}</b>,
+    показано <b>{{ dashboard.resumes|length }}</b>
+    &nbsp;·&nbsp; роль: <b>{{ dashboard.filters.role_query }}</b>
+    {% if dashboard.filters.min_experience_years %}
+      &nbsp;·&nbsp; стаж от <b>{{ dashboard.filters.min_experience_years }}</b> лет
+    {% endif %}
+  </div>
+  <div class="chips">
+    {% for keyword in dashboard.filters.must_keywords %}<span class="chip must" title="Обязательный термин, назван вручную">{{ keyword }}</span>{% endfor %}
+    {% for keyword in dashboard.filters.required_keywords %}<span class="chip" title="Требуемый термин, выбран из вакансии">{{ keyword }}</span>{% endfor %}
+  </div>
+
+  {% if dashboard.plan.filters %}
+  <div class="tune">
+    <div class="tune-title">Критерии и веса</div>
+    {% with plan=dashboard.plan sliders_apart=True %}{% include "resumes/_panel.html" %}{% endwith %}
+  </div>
+  {% endif %}
+</div>
+
+{% if dashboard.pool %}
+<div class="pool">
+  <h2>Кто выходит вперёд</h2>
+  {# The sliders re-sort this list, so they stand right over it. #}
+  <div class="weights">
+    {% with plan=dashboard.plan %}{% include "resumes/_sliders.html" %}{% endwith %}
+  </div>
+  <p class="lead">
+    <span id="poolCount"></span>
+    Ползунки пересортировывают список сразу: веса пересчитываются здесь,
+    заново ничего не ищется. Карточки ниже переставляются вместе с ним —
+    но показать можно только тех, кого принёс поиск: за остальными «Пересобрать».
+  </p>
+  <div class="legend" id="poolLegend"></div>
+  <table><tbody id="poolRows"></tbody></table>
+</div>
+
+{{ dashboard.pool_data|json_script:"poolData" }}
+{{ dashboard.criteria|json_script:"criteriaData" }}
+{% endif %}
+
+{% if not dashboard.resumes %}
+  <p class="empty">Под эти требования ничего не нашлось.</p>
+{% endif %}
+
+<div id="cards">
+{% for resume in dashboard.resumes %}
+<div class="page" data-id="{{ resume.id }}">
+
+  <div class="rank">
+    <span class="no">{{ resume.rank }}</span>
+    <span>совпадение <b class="score">{{ resume.score|floatformat:4 }}</b></span>
+    <span class="fell">выпал из топа при этих весах</span>
+    {% if resume.url %}<a href="{{ resume.url }}" target="_blank">{{ resume.id }}</a>{% endif %}
+  </div>
+
+  <h1>{{ resume.title|default:"Без названия" }}</h1>
+  <div class="meta">
+    {{ resume.gender }}{% if resume.age %}, {{ resume.age }} лет{% endif %}
+    {% if resume.area %}<br>Проживает: {{ resume.area }}{% endif %}
+    {% if resume.salary %}<br>Ожидания: {{ resume.salary }}{% endif %}
+  </div>
+
+  <div class="section">Желаемая должность</div>
+  <h2>{{ resume.title }}</h2>
+  <div class="meta">
+    {% if resume.roles %}Специализации: {{ resume.roles|join:", " }}<br>{% endif %}
+    {% if resume.employments %}Тип занятости: {{ resume.employments|join:", " }}<br>{% endif %}
+    {% if resume.work_formats %}Формат работы: {{ resume.work_formats|join:", " }}{% endif %}
+  </div>
+
+  <div class="section">Опыт работы{% if resume.total_experience %} — {{ resume.total_experience }}{% endif %}</div>
+  {% for job in resume.experience %}
+  <div class="job{% if job.matched %} matched{% endif %}">
+    <div class="when">{{ job.period }}{% if job.duration %}<br>{{ job.duration }}{% endif %}</div>
+    <div class="what">
+      <h2>{{ job.company }}</h2>
+      {% if job.area %}<div class="meta">{{ job.area }}</div>{% endif %}
+      {% if job.industries %}<div class="industries">{{ job.industries|join:" • " }}</div>{% endif %}
+      <h3>{{ job.position }}</h3>
+      <div class="desc">{{ job.description }}</div>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% if resume.education %}
+  <div class="section">Образование{% if resume.education_level %} — {{ resume.education_level }}{% endif %}</div>
+  {% for entry in resume.education %}
+  <div class="row">
+    <div class="label">{{ entry.year|default_if_none:"" }}</div>
+    <div class="value">
+      <b>{{ entry.name }}</b>
+      {% if entry.result %}<div class="meta">{{ entry.result }}</div>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if resume.languages or resume.skill_set %}
+  <div class="section">Навыки</div>
+  {% if resume.languages %}
+  <div class="row">
+    <div class="label">Знание языков</div>
+    <div class="value">{% for line in resume.languages %}{{ line }}<br>{% endfor %}</div>
+  </div>
+  {% endif %}
+  {% if resume.skill_set %}
+  <div class="row">
+    <div class="label">Навыки</div>
+    <div class="value chips">
+      {% for skill in resume.skill_set %}<span class="chip">{{ skill }}</span>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  {% if resume.about %}
+  <div class="section">Дополнительная информация</div>
+  <div class="row">
+    <div class="label">Обо мне</div>
+    <div class="value desc">{{ resume.about }}</div>
+  </div>
+  {% endif %}
+
+</div>
+{% endfor %}
+</div>
+
+<script>
+(function () {
+  const holder = document.getElementById("poolData");
+  const panel = document.getElementById("panel");
+  if (!holder || !panel) return;
+
+  const pool = JSON.parse(holder.textContent);
+  const names = JSON.parse(document.getElementById("criteriaData").textContent);
+  const rows = document.getElementById("poolRows");
+  const count = document.getElementById("poolCount");
+  // The sliders live by the list now, and belong to the panel by form="panel".
+  const sliders = document.querySelectorAll('input[type="range"]');
+  const size = panel.querySelector('input[name="size"]');
+
+  // A colour per criterion, kept the same everywhere the page explains itself.
+  const palette = ["#d6001c", "#3f7fbf", "#4a9d5c", "#e08a2e", "#8a6bbf"];
+  const colors = {};
+  Object.keys(names).forEach(function (key, index) {
+    colors[key] = palette[index % palette.length];
+  });
+
+  // The scores were normalised once when the pool was fixed. Re-weighting
+  // them is the whole cost of moving a slider: no query, no request.
+  function weights() {
+    const moved = {};
+    sliders.forEach(function (slider) {
+      moved[slider.name] = parseFloat(slider.value) || 0;
+    });
+    return moved;
+  }
+
+  function score(row, moved) {
+    let sum = 0;
+    let offered = 0;
+    for (const key in row.scores) {
+      sum += (moved[key] || 0) * row.scores[key];
+      offered += moved[key] || 0;
+    }
+    return offered ? sum / offered : 0;
+  }
+
+  function escaped(text) {
+    return String(text || "").replace(/[&<>"]/g, function (char) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[char];
+    });
+  }
+
+  function facts(row) {
+    const parts = [row.area, row.age ? row.age + " лет" : "", row.experience, row.salary];
+    return escaped(parts.filter(Boolean).join(" · "));
+  }
+
+  // One band per criterion, as wide as that criterion lifted this candidate:
+  // the whole bar is as long as the leader's, so rows compare at a glance.
+  function parts(row, moved, value, best) {
+    let drawn = "";
+    for (const key in row.scores) {
+      const share = (moved[key] || 0) * row.scores[key];
+      if (!share) continue;
+      const name = names[key] || key;
+      const title = escaped(name + ": балл " + row.scores[key].toFixed(2) +
+        " × вес " + (moved[key] || 0).toFixed(1) + " = " + share.toFixed(2));
+      drawn += '<i style="flex:' + share.toFixed(4) + ";background:" + colors[key] +
+        '" title="' + title + '">' + escaped(name) + "</i>";
+    }
+    const width = best ? (value / best) * 100 : 0;
+    return '<div class="track"><div class="parts" style="width:' +
+      width.toFixed(1) + '%">' + drawn + "</div></div>";
+  }
+
+  function draw() {
+    const moved = weights();
+    const limit = Math.max(parseInt(size && size.value, 10) || 20, 1);
+    const ranked = pool
+      .map(function (row) { return [row, score(row, moved)]; })
+      .sort(function (left, right) { return right[1] - left[1]; })
+      .slice(0, limit);
+
+    const best = ranked.length ? ranked[0][1] : 0;
+    rows.innerHTML = ranked.map(function (entry, position) {
+      const row = entry[0];
+      const name = escaped(row.title || "Без названия");
+      return '<tr><td class="no">' + (position + 1) + "</td>" +
+        '<td><div class="who">' +
+        (row.url ? '<a href="' + escaped(row.url) + '" target="_blank">' + name + "</a>" : name) +
+        '</div><div class="facts">' + facts(row) + "</div>" +
+        parts(row, moved, entry[1], best) + "</td>" +
+        '<td class="num">' + entry[1].toFixed(3) + "</td></tr>";
+    }).join("");
+
+    count.textContent = "Показано " + ranked.length + " из " + pool.length + " отобранных. ";
+    restack(ranked, moved);
+  }
+
+  // The cards were fetched at the old weights, so they cannot follow the list
+  // wherever it goes; what they can do is stand in the new order among
+  // themselves and own up to it when a card no longer belongs up here.
+  function restack(ranked, moved) {
+    const cards = document.getElementById("cards");
+    if (!cards) return;
+    const places = {};
+    ranked.forEach(function (entry, position) {
+      places[entry[0].id] = position + 1;
+    });
+    const scores = {};
+    pool.forEach(function (row) { scores[row.id] = score(row, moved); });
+
+    Array.prototype.slice.call(cards.children)
+      .sort(function (left, right) {
+        return (scores[right.dataset.id] || 0) - (scores[left.dataset.id] || 0);
+      })
+      .forEach(function (card, position) {
+        cards.appendChild(card);
+        const place = places[card.dataset.id];
+        card.classList.toggle("out", !place);
+        card.querySelector(".rank .no").textContent = place || position + 1;
+        card.querySelector(".rank .score").textContent =
+          (scores[card.dataset.id] || 0).toFixed(4);
+      });
+  }
+
+  const legend = document.getElementById("poolLegend");
+  legend.innerHTML = Object.keys(names).map(function (key) {
+    return '<span><b style="background:' + colors[key] + '"></b>' +
+      escaped(names[key]) + "</span>";
+  }).join("");
+
+  sliders.forEach(function (slider) { slider.addEventListener("input", draw); });
+  if (size) size.addEventListener("input", draw);
+  draw();
+})();
+</script>
+
+</body>
+</html>

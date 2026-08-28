@@ -1,0 +1,413 @@
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "knn": true
+    },
+    "analysis": {
+      "filter": {
+        "ru_stop": {"type": "stop", "stopwords": "_russian_"},
+        "ru_stemmer": {"type": "stemmer", "language": "russian"},
+        "en_stemmer": {"type": "stemmer", "language": "english"}
+      },
+      "analyzer": {
+        "ru_en": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "ru_stop", "ru_stemmer", "en_stemmer"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "dynamic": false,
+
+    "properties": {
+      "id": {"type": "keyword"},
+      "source": {"type": "keyword"},
+      "real_id": {"type": "keyword"},
+      "alternate_url": {"type": "keyword", "index": false},
+
+      "full_text": {"type": "text", "analyzer": "ru_en"},
+
+      "title": {
+        "type": "text",
+        "analyzer": "ru_en",
+        "copy_to": "full_text",
+        "fields": {"raw": {"type": "keyword", "ignore_above": 256}}
+      },
+
+      "first_name": {"type": "text", "analyzer": "ru_en"},
+      "last_name": {"type": "text", "analyzer": "ru_en"},
+      "middle_name": {"type": "text", "analyzer": "ru_en"},
+
+      "age": {"type": "integer"},
+      "birth_date": {"type": "date", "format": "strict_date_optional_time"},
+      "gender": {
+        "properties": {
+          "id": {"type": "keyword"},
+          "name": {"type": "keyword"}
+        }
+      },
+
+      "created_at": {"type": "date", "format": "yyyy-MM-dd'T'HH:mm:ssZ||strict_date_optional_time_nanos||epoch_millis"},
+      "updated_at": {"type": "date", "format": "yyyy-MM-dd'T'HH:mm:ssZ||strict_date_optional_time_nanos||epoch_millis"},
+
+      "area": {
+        "properties": {
+          "id": {"type": "keyword"},
+          "name": {"type": "keyword"}
+        }
+      },
+
+      "citizenship": {
+        "properties": {
+          "id": {"type": "keyword"},
+          "name": {"type": "keyword"}
+        }
+      },
+
+      "work_ticket": {
+        "properties": {
+          "id": {"type": "keyword"},
+          "name": {"type": "keyword"}
+        }
+      },
+
+      "salary": {
+        "properties": {
+          "amount": {"type": "long"},
+          "currency": {"type": "keyword"}
+        }
+      },
+
+      "total_experience": {
+        "properties": {
+          "months": {"type": "integer"}
+        }
+      },
+
+      "tenure": {
+        "properties": {
+          "job_count": {"type": "integer"},
+          "average_months": {"type": "integer"},
+          "median_months": {"type": "integer"},
+          "weighted_months": {"type": "integer"},
+          "min_months": {"type": "integer"},
+          "longest_months": {"type": "integer"},
+          "last_months": {"type": "integer"},
+          "jobs_under_year": {"type": "integer"}
+        }
+      },
+
+      "last_job": {
+        "properties": {
+          "position": {
+            "type": "text",
+            "analyzer": "ru_en",
+            "fields": {"raw": {"type": "keyword", "ignore_above": 256}}
+          },
+          "company": {
+            "type": "text",
+            "analyzer": "ru_en",
+            "fields": {"raw": {"type": "keyword", "ignore_above": 256}}
+          },
+          "start": {"type": "date", "format": "strict_date_optional_time"},
+          "end": {"type": "date", "format": "strict_date_optional_time"},
+          "duration_months": {"type": "integer"},
+          "is_current": {"type": "boolean"},
+          "industry_ids": {"type": "keyword"}
+        }
+      },
+
+      "company_ids": {"type": "keyword"},
+      "company_keys": {"type": "keyword"},
+      "industry_ids": {"type": "keyword"},
+
+      "platform": {
+        "properties": {
+          "id": {"type": "keyword"}
+        }
+      },
+
+      "resume_locale": {
+        "properties": {
+          "id": {"type": "keyword"},
+          "name": {"type": "keyword"}
+        }
+      },
+
+      "skills": {
+        "type": "text",
+        "analyzer": "ru_en",
+        "copy_to": "full_text"
+      },
+
+      "skill_set": {
+        "type": "text",
+        "analyzer": "ru_en",
+        "copy_to": "full_text",
+        "fields": {"raw": {"type": "keyword", "ignore_above": 256}}
+      },
+
+      "language": {
+        "type": "nested",
+        "properties": {
+          "id": {"type": "keyword"},
+          "name": {"type": "keyword"},
+          "level": {
+            "properties": {
+              "id": {"type": "keyword"},
+              "name": {"type": "keyword"}
+            }
+          }
+        }
+      },
+
+      "professional_roles": {
+        "properties": {
+          "id": {"type": "keyword"},
+          "name": {
+            "type": "text",
+            "analyzer": "ru_en",
+            "copy_to": "full_text",
+            "fields": {"raw": {"type": "keyword", "ignore_above": 256}}
+          }
+        }
+      },
+
+      "employment": {
+        "properties": {
+          "id": {"type": "keyword"},
+          "name": {"type": "keyword"}
+        }
+      },
+      "employments": {
+        "properties": {
+          "id": {"type": "keyword"},
+          "name": {"type": "keyword"}
+        }
+      },
+      "employment_form": {
+        "properties": {
+          "id": {"type": "keyword"},
+          "name": {"type": "keyword"}
+        }
+      },
+
+      "work_format": {
+        "properties": {
+          "id": {"type": "keyword"},
+          "name": {"type": "keyword"}
+        }
+      },
+
+      "schedule": {
+        "properties": {
+          "id": {"type": "keyword"},
+          "name": {"type": "keyword"}
+        }
+      },
+      "schedules": {
+        "properties": {
+          "id": {"type": "keyword"},
+          "name": {"type": "keyword"}
+        }
+      },
+
+      "relocation": {
+        "properties": {
+          "type": {
+            "properties": {
+              "id": {"type": "keyword"},
+              "name": {"type": "keyword"}
+            }
+          },
+          "area": {
+            "properties": {
+              "id": {"type": "keyword"},
+              "name": {"type": "keyword"}
+            }
+          }
+        }
+      },
+
+      "business_trip_readiness": {
+        "properties": {
+          "id": {"type": "keyword"},
+          "name": {"type": "keyword"}
+        }
+      },
+
+      "travel_time": {
+        "properties": {
+          "id": {"type": "keyword"},
+          "name": {"type": "keyword"}
+        }
+      },
+
+      "driver_license_types": {
+        "properties": {
+          "id": {"type": "keyword"}
+        }
+      },
+
+      "has_vehicle": {"type": "boolean"},
+      "has_medical_book": {"type": "boolean"},
+      "has_self_employment": {"type": "boolean"},
+
+      "metro": {
+        "properties": {
+          "id": {"type": "keyword"},
+          "name": {"type": "keyword"},
+          "line": {
+            "properties": {
+              "id": {"type": "keyword"},
+              "name": {"type": "keyword"}
+            }
+          }
+        }
+      },
+
+      "education": {
+        "properties": {
+          "level": {
+            "properties": {
+              "id": {"type": "keyword"},
+              "name": {"type": "keyword"}
+            }
+          },
+          "primary": {
+            "type": "nested",
+            "properties": {
+              "id": {"type": "keyword"},
+              "name": {
+                "type": "text",
+                "analyzer": "ru_en",
+                "copy_to": "full_text",
+                "fields": {"raw": {"type": "keyword", "ignore_above": 256}}
+              },
+              "organization": {"type": "text", "analyzer": "ru_en", "copy_to": "full_text"},
+              "result": {"type": "text", "analyzer": "ru_en"},
+              "university_acronym": {"type": "keyword"},
+              "year": {"type": "integer"},
+              "education_level": {
+                "properties": {
+                  "id": {"type": "keyword"},
+                  "name": {"type": "keyword"}
+                }
+              }
+            }
+          },
+          "additional": {
+            "type": "nested",
+            "properties": {
+              "id": {"type": "keyword"},
+              "name": {"type": "text", "analyzer": "ru_en", "copy_to": "full_text"},
+              "organization": {"type": "text", "analyzer": "ru_en", "copy_to": "full_text"},
+              "result": {"type": "text", "analyzer": "ru_en"},
+              "year": {"type": "integer"}
+            }
+          },
+          "attestation": {
+            "type": "nested",
+            "properties": {
+              "id": {"type": "keyword"},
+              "name": {"type": "text", "analyzer": "ru_en", "copy_to": "full_text"},
+              "organization": {"type": "text", "analyzer": "ru_en", "copy_to": "full_text"},
+              "result": {"type": "text", "analyzer": "ru_en"},
+              "year": {"type": "integer"}
+            }
+          }
+        }
+      },
+
+      "experience": {
+        "type": "nested",
+        "properties": {
+          "id": {"type": "keyword"},
+          "start": {"type": "date", "format": "strict_date_optional_time"},
+          "end": {"type": "date", "format": "strict_date_optional_time"},
+          "duration_months": {"type": "integer"},
+          "position": {
+            "type": "text",
+            "analyzer": "ru_en",
+            "copy_to": "full_text",
+            "fields": {"raw": {"type": "keyword", "ignore_above": 256}}
+          },
+          "company": {
+            "type": "text",
+            "analyzer": "ru_en",
+            "copy_to": "full_text",
+            "fields": {"raw": {"type": "keyword", "ignore_above": 256}}
+          },
+          "company_id": {"type": "keyword"},
+          "company_key": {"type": "keyword"},
+          "company_url": {"type": "keyword", "index": false},
+
+          "description": {
+            "type": "text",
+            "analyzer": "ru_en",
+            "copy_to": "full_text"
+          },
+
+          "head_vector": {
+            "type": "knn_vector",
+            "dimension": 1536,
+            "method": {
+              "name": "hnsw",
+              "engine": "lucene",
+              "space_type": "cosinesimil",
+              "parameters": {"ef_construction": 128, "m": 16}
+            }
+          },
+
+          "description_chunks": {
+            "type": "nested",
+            "properties": {
+              "order": {"type": "integer"},
+              "text": {"type": "text", "analyzer": "ru_en"},
+              "vector": {
+                "type": "knn_vector",
+                "dimension": 1536,
+                "method": {
+                  "name": "hnsw",
+                  "engine": "lucene",
+                  "space_type": "cosinesimil",
+                  "parameters": {"ef_construction": 128, "m": 16}
+                }
+              }
+            }
+          },
+
+          "area": {
+            "properties": {
+              "id": {"type": "keyword"},
+              "name": {"type": "keyword"}
+            }
+          },
+          "industries": {
+            "properties": {
+              "id": {"type": "keyword"},
+              "name": {"type": "keyword"}
+            }
+          },
+          "employer": {
+            "properties": {
+              "id": {"type": "keyword"},
+              "name": {"type": "keyword"}
+            }
+          }
+        }
+      },
+
+      "experience_group_by_company": {
+        "properties": {
+          "duration": {"type": "integer"},
+          "experience_ids": {"type": "keyword"}
+        }
+      }
+    }
+  }
+}

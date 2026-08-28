@@ -1,0 +1,50 @@
+<form class="panel" id="panel" method="post" action="{{ plan.action }}">
+  {% csrf_token %}
+  <input type="hidden" name="vacancy" value="{{ plan.vacancy }}">
+  <input type="hidden" name="general" value="{{ plan.general }}">
+  <input type="hidden" name="recruiter" value="{{ plan.recruiter }}">
+  <input type="hidden" name="filters" value="{{ plan.filters }}">
+  <input type="hidden" name="planId" value="{{ plan.plan_id }}">
+
+  <div class="criteria">
+    <div class="block">
+      <label for="roleQuery">
+        Кого ищем
+        <span class="hint">Должность и отрасль. Сопоставляется с названиями должностей кандидата.</span>
+      </label>
+      <input id="roleQuery" name="roleQuery" value="{{ plan.role_query }}">
+    </div>
+
+    <div class="block">
+      <label for="semanticQuery">
+        Чем занимался
+        <span class="hint">Описание работы от лица кандидата. Сопоставляется с описаниями опыта.</span>
+      </label>
+      <textarea id="semanticQuery" name="semanticQuery" rows="5">{{ plan.semantic_query }}</textarea>
+    </div>
+
+    {% for group in plan.groups %}
+    <div class="block">
+      <div class="group-title">{{ group.title }}</div>
+      <div class="boxes">
+        {% for item in group.items %}
+        <label class="box{% if group.key == 'must' %} must{% endif %}">
+          <input type="checkbox" name="keep" value="{{ item.token }}"{% if item.checked %} checked{% endif %}>
+          <span>{{ item.label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# Apart, the sliders sit by the list they re-sort, but still post here. #}
+  {% if not sliders_apart %}{% include "resumes/_sliders.html" %}{% endif %}
+
+  <div class="actions">
+    <label for="size">Кандидатов</label>
+    <input id="size" name="size" type="number" min="1" max="50" value="{{ plan.size }}">
+    <button type="submit">{% if plan.plan_id %}Пересобрать{% else %}Искать{% endif %}</button>
+    <span class="hint">Галочки и тексты меняют запрос — за ними нужен новый поиск. Ползунки — нет.</span>
+  </div>
+</form>

@@ -1,0 +1,56 @@
+  .panel .block { margin-bottom: 20px; }
+  .panel label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .panel .hint { color: var(--muted); font-size: 12px; font-weight: 400; display: block; margin-top: 2px; }
+  .panel input[type="text"], .panel input:not([type]), .panel textarea, .panel input[type="number"] {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    font: inherit;
+    color: inherit;
+    background: #fff;
+  }
+  .panel textarea { resize: vertical; }
+  .panel input:focus, .panel textarea:focus { outline: none; border-color: var(--accent); }
+
+  .group-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+  .boxes { display: flex; flex-wrap: wrap; gap: 6px; }
+  .box {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f3f3f3;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 4px 9px;
+    font-size: 13px;
+    font-weight: 400;
+    margin: 0;
+    cursor: pointer;
+  }
+  /* Named by the recruiter, not read out of the vacancy by the model. */
+  .box.must { background: #fff; border-color: var(--accent); color: var(--accent); }
+  /* An unticked criterion is not searched by, and reads that way. */
+  .box:has(input:not(:checked)) { color: var(--muted); text-decoration: line-through; }
+  .box input { margin: 0; }
+
+  .slider { margin-bottom: 14px; }
+  .slider-head { display: flex; justify-content: space-between; font-size: 13px; }
+  .slider input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+  .actions label { margin: 0; flex: none; }
+  .actions .hint { flex-basis: 100%; margin: 0; }
+  .actions input[type="number"] { width: 90px; }
+  .panel button {
+    margin-left: auto;
+    padding: 11px 28px;
+    border: 0;
+    border-radius: 4px;
+    background: var(--accent);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .panel button:hover { filter: brightness(1.08); }

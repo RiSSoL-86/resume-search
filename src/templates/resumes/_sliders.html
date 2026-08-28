@@ -1,0 +1,15 @@
+<div class="block">
+  <div class="group-title">Вес в ранжировании</div>
+  {% for slider in plan.sliders %}
+  <div class="slider">
+    <div class="slider-head">
+      <b>{{ slider.title }}</b>
+      <output>{{ slider.value|floatformat:1 }}</output>
+    </div>
+    <input form="panel" id="{{ slider.key }}" name="{{ slider.key }}" type="range"
+           min="0" max="3" step="0.1" value="{{ slider.value|floatformat:1 }}"
+           oninput="this.previousElementSibling.lastElementChild.value = this.value">
+    <div class="hint">{{ slider.hint }}</div>
+  </div>
+  {% endfor %}
+</div>
