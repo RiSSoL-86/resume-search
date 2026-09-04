@@ -1,0 +1,142 @@
+services:
+  db:
+    image: postgres:15.2
+    restart: always
+    env_file:
+      - ./src/.env
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -q -d "$${POSTGRES_DB}" -U "$${POSTGRES_USER}"']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  redis:
+    image: redis:alpine
+    restart: always
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - internal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  opensearch:
+    image: opensearchproject/opensearch:2.17.1
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - DISABLE_SECURITY_PLUGIN=true
+      - DISABLE_INSTALL_DEMO_CONFIG=true
+      # A few hundred resumes need nothing like the default gigabyte.
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    networks:
+      - internal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "3"
+
+  backend:
+    build:
+      dockerfile: etc/docker/prod/app.Dockerfile
+      context: .
+    restart: always
+    command:
+      - sh
+      - -c
+      - >-
+        python manage.py migrate --noinput &&
+        python manage.py collectstatic --noinput &&
+        exec uvicorn django_project.asgi:application
+        --host 0.0.0.0 --port "$$PORT" --workers "$$WEB_CONCURRENCY"
+    env_file:
+      - ./src/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - media_data:/cdn/media
+      - static_data:/cdn/static
+      # Resumes are not in the repository; they are copied to the server.
+      - ./people:/app/people:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+    networks:
+      - internal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "3"
+
+  celery:
+    build:
+      dockerfile: etc/docker/prod/worker.Dockerfile
+      context: .
+    restart: always
+    env_file:
+      - ./src/.env
+    volumes:
+      # The worker reads the uploaded files the backend stored.
+      - media_data:/cdn/media
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+    networks:
+      - internal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "3"
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  db_data:
+  opensearch_data:
+  media_data:
+  static_data:

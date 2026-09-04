@@ -1,0 +1,34 @@
+services:
+  backend:
+    build:
+      dockerfile: etc/docker/dev/app.Dockerfile
+      context: .
+    restart: always
+    env_file:
+      - ./src/.env
+    volumes:
+      - ./src/:/app/
+      - ./cdn/static/:/cdn/static/
+      - ./cdn/media/:/cdn/media/
+    network_mode: "host"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "500m"
+
+  celery:
+    build:
+      dockerfile: etc/docker/dev/worker.Dockerfile
+      context: .
+    restart: always
+    env_file:
+      - ./src/.env
+    volumes:
+      - ./src/:/app/
+      - ./cdn/static/:/cdn/static/
+      - ./cdn/media/:/cdn/media/
+    network_mode: "host"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "500m"

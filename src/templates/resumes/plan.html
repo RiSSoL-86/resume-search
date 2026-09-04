@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Проверка критериев</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #8b8b8b;
+    --rule: #e0e0e0;
+    --accent: #d6001c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #ececec;
+    color: var(--ink);
+    font: 15px/1.5 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  a { color: var(--muted); font-size: 13px; }
+
+  .page {
+    max-width: 760px;
+    margin: 48px auto;
+    background: #fff;
+    padding: 40px 56px 48px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .12);
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .lead { color: var(--muted); font-size: 13px; margin: 0 0 28px; }
+
+{% include "resumes/_panel.css" %}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Что нашлось в вашем тексте</h1>
+  <p class="lead">
+    Снимите галочку с того, что искать не нужно, и подвиньте веса —
+    поиск пойдёт ровно по тому, что осталось.
+    <a href=".">← начать заново</a>
+  </p>
+
+  {% include "resumes/_panel.html" %}
+</div>
+</body>
+</html>

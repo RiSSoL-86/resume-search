@@ -1,0 +1,13 @@
+.git
+.github
+.idea
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.venv
+**/__pycache__
+**/*.py[cod]
+cdn
+people
+src/.env
+src/celerybeat-schedule*

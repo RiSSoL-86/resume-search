@@ -1,0 +1,59 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            set -e
+            mkdir -p ~/resume-search
+            cd ~/resume-search
+            if [ ! -d .git ]; then
+              git init
+              git remote add origin https://github.com/RiSSoL-86/resume-search.git
+            fi
+            git fetch --all
+            git reset --hard origin/main
+
+            if [ ! -f compose.yml ]; then
+              echo "::error::compose.yml is missing in ~/resume-search — place it manually first"
+              exit 1
+            fi
+            if [ ! -f src/.env ]; then
+              echo "::error::src/.env is missing in ~/resume-search — place it manually first"
+              exit 1
+            fi
+            # Resumes live outside the repository; the backend mounts the directory.
+            mkdir -p people
+
+            docker compose build
+            docker compose up -d
+
+            # Drop dangling images and cap the build cache at ~2GB.
+            docker image prune -f
+            docker builder prune -f --keep-storage 2GB
+
+            # OpenSearch takes the longest to report itself healthy.
+            sleep 60
+            echo "=== docker compose ps ==="
+            docker compose ps
+            # Fail the deploy if any service is not running (exited/restarting).
+            if docker compose ps --quiet --status exited --status restarting --status dead | grep -q .; then
+              echo "::error::One or more services are not running"
+              docker compose ps
+              docker compose logs --tail 50
+              exit 1
+            fi
+            echo "All services are up."

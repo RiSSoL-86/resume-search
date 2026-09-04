@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Подбор кандидатов</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #8b8b8b;
+    --rule: #e0e0e0;
+    --accent: #d6001c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #ececec;
+    color: var(--ink);
+    font: 15px/1.5 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+
+  .page {
+    max-width: 760px;
+    margin: 48px auto;
+    background: #fff;
+    padding: 40px 56px 48px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .12);
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .lead { color: var(--muted); font-size: 13px; margin: 0 0 28px; }
+  .error {
+    border-left: 3px solid var(--accent);
+    background: #fdf3f4;
+    color: var(--accent);
+    padding: 10px 14px;
+    font-size: 13px;
+    margin: 0 0 24px;
+  }
+
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .hint { color: var(--muted); font-size: 12px; font-weight: 400; display: block; margin-top: 2px; }
+  .field { margin-bottom: 22px; }
+  .field.small textarea { min-height: 110px; }
+  textarea, input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    font: inherit;
+    color: inherit;
+    background: #fff;
+  }
+  textarea { min-height: 260px; resize: vertical; }
+  textarea:focus, input:focus { outline: none; border-color: var(--accent); }
+
+  .row { display: flex; gap: 16px; align-items: flex-end; }
+  .row .field { flex: 0 0 120px; margin-bottom: 0; }
+  button {
+    margin-left: auto;
+    padding: 11px 28px;
+    border: 0;
+    border-radius: 4px;
+    background: var(--accent);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { filter: brightness(1.08); }
+</style>
+</head>
+<body>
+<form class="page" method="post" action=".">
+  {% csrf_token %}
+  <h1>Подбор кандидатов</h1>
+  <p class="lead">Опишите вакансию своими словами — критерии из текста извлекаются сами.</p>
+
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+  <div class="field">
+    <label for="vacancy">
+      Требования вакансии
+      <span class="hint">Текст вакансии как есть. Отсюда берутся профессия, предметная область и технологии.</span>
+    </label>
+    <textarea id="vacancy" name="vacancy" required
+              placeholder="Старший системный аналитик в биллинг оператора связи. Опыт от 5 лет...">{{ form.vacancy }}</textarea>
+  </div>
+
+  <div class="field small">
+    <label for="general">
+      Общие требования
+      <span class="hint">Что компания спрашивает с любого кандидата: город, формат работы, языки, образование,
+      усидчивость. На профессию не влияет.</span>
+    </label>
+    <textarea id="general" name="general"
+              placeholder="Москва или удалённо, английский от B1, высшее образование, более одного года на одном месте">{{ form.general }}</textarea>
+  </div>
+
+  <div class="field small">
+    <label for="recruiter">
+      Требования от рекрутёра
+      <span class="hint">Что вы знаете сверх текста вакансии. Если противоречит вакансии — верим вам.
+      Названные здесь технологии весят больше всего остального; разные написания одной пишите через «|»: ML|AI|ИИ.</span>
+    </label>
+    <textarea id="recruiter" name="recruiter"
+              placeholder="На деле ищут человека из телекома, «аналитик» тут условно — половина работы это интеграции. Обязательно Kafka и ML|AI|ИИ">{{ form.recruiter }}</textarea>
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label for="size">Кандидатов</label>
+      <input id="size" name="size" type="number" min="1" max="50" value="{{ form.size }}">
+    </div>
+    <button type="submit">Искать</button>
+  </div>
+</form>
+</body>
+</html>
